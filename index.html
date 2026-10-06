@@ -1,0 +1,2184 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Mission 12 - Giải Mã Thiết Bị Mạng</title>
+    <style>
+        :root {
+            --bg-deep: #0a0e1a;
+            --bg-card: #131b2e;
+            --bg-card-hover: #1c2742;
+            --cyan-glow: #00f2fe;
+            --cyan-dim: #4facfe;
+            --purple-glow: #7f00ff;
+            --green-correct: #00e676;
+            --red-warn: #ff5252;
+            --yellow-hint: #ffd600;
+            --text-main: #f0f4f8;
+            --text-muted: #94a3b8;
+            --border-glow: 1px solid rgba(0, 242, 254, 0.3);
+            --font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(127, 0, 255, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(0, 242, 254, 0.15) 0%, transparent 40%);
+            color: var(--text-main);
+            font-family: var(--font-family);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* 1. THANH THÔNG TIN CỐ ĐỊNH NGƯỜI CHƠI (TOP BAR) */
+        #player-sticky-bar {
+            background: #060911;
+            border-bottom: 1px solid rgba(0, 242, 254, 0.2);
+            padding: 6px 20px;
+            font-size: 14px;
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 101;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+
+        .user-tag-group {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .user-tag {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+        }
+
+        .timer-badge {
+            font-family: monospace;
+            font-size: 16px;
+            font-weight: 700;
+            padding: 3px 12px;
+            border-radius: 6px;
+            background: rgba(0, 242, 254, 0.1);
+            color: var(--cyan-glow);
+            border: 1px solid var(--cyan-glow);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s;
+        }
+        .timer-warning-10 {
+            background: rgba(255, 214, 0, 0.15);
+            color: var(--yellow-hint);
+            border-color: var(--yellow-hint);
+        }
+        .timer-warning-5 {
+            background: rgba(255, 140, 0, 0.2);
+            color: #ff9800;
+            border-color: #ff9800;
+        }
+        .timer-warning-1 {
+            background: rgba(255, 82, 82, 0.25);
+            color: var(--red-warn);
+            border-color: var(--red-warn);
+            animation: pulseWarning 1s infinite;
+        }
+        @keyframes pulseWarning {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.03); }
+        }
+
+        /* 2. HEADER TIẾN TRÌNH */
+        header {
+            background: rgba(19, 27, 46, 0.85);
+            backdrop-filter: blur(10px);
+            border-bottom: var(--border-glow);
+            padding: 10px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 35px;
+            z-index: 100;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--cyan-glow);
+            text-shadow: 0 0 10px rgba(0, 242, 254, 0.5);
+        }
+
+        .header-progress {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .station-step {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            border: 1px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .station-step.active {
+            background: rgba(0, 242, 254, 0.15);
+            color: var(--cyan-glow);
+            border-color: var(--cyan-glow);
+            box-shadow: 0 0 12px rgba(0, 242, 254, 0.3);
+        }
+
+        .station-step.completed {
+            background: rgba(0, 230, 118, 0.15);
+            color: var(--green-correct);
+            border-color: var(--green-correct);
+        }
+
+        .header-status {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 15px;
+            font-weight: bold;
+        }
+
+        .score-badge {
+            background: linear-gradient(135deg, #7f00ff, #e100ff);
+            padding: 5px 14px;
+            border-radius: 16px;
+            box-shadow: 0 0 10px rgba(225, 0, 255, 0.4);
+        }
+
+        .btn-ctrl {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-ctrl:hover {
+            background: rgba(0, 242, 254, 0.2);
+            border-color: var(--cyan-glow);
+            color: #fff;
+        }
+
+        .btn-submit-early {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+            border: none;
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .btn-submit-early:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(255, 152, 0, 0.5);
+        }
+
+        /* 3. MAIN CONTAINER & PANELS */
+        main {
+            flex: 1;
+            padding: 20px;
+            max-width: 1280px;
+            margin: 0 auto;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .game-panel {
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: var(--border-glow);
+            padding: 30px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+            position: relative;
+            min-height: 520px;
+            display: flex;
+            flex-direction: column;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1.title {
+            font-size: 36px;
+            font-weight: 800;
+            text-align: center;
+            background: linear-gradient(135deg, #00f2fe, #4facfe, #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        h2.station-title {
+            font-size: 22px;
+            color: var(--cyan-glow);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        p.prompt {
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            color: var(--text-main);
+        }
+
+        /* 4. BUTTONS */
+        .btn-primary {
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            color: #051329;
+            font-size: 17px;
+            font-weight: 700;
+            padding: 12px 26px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.4);
+            transition: all 0.25s;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.03);
+            box-shadow: 0 6px 20px rgba(0, 242, 254, 0.6);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-main);
+            font-size: 15px;
+            font-weight: 600;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.18);
+        }
+
+        /* 5. FORMS & INPUTS (MÀN HÌNH ĐĂNG NHẬP) */
+        .auth-container {
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .tab-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--text-muted);
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.25s;
+        }
+
+        .tab-btn.active {
+            background: rgba(0, 242, 254, 0.15);
+            border-color: var(--cyan-glow);
+            color: var(--cyan-glow);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            text-align: left;
+        }
+
+        .form-group label {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--cyan-dim);
+        }
+
+        .form-input {
+            background: #0b1120;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 12px 14px;
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: var(--cyan-glow);
+            box-shadow: 0 0 8px rgba(0, 242, 254, 0.4);
+        }
+
+        .member-list-box {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .member-row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        /* 6. OPTIONS & SIMULATORS (GIỮ NGUYÊN TỪ PHIÊN BẢN GỐC) */
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 14px;
+            margin: 18px 0;
+        }
+
+        .option-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            padding: 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.25s;
+        }
+
+        .option-card:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--cyan-dim);
+            transform: translateY(-2px);
+        }
+
+        .option-card.correct {
+            border-color: var(--green-correct);
+            background: rgba(0, 230, 118, 0.2);
+            color: #fff;
+        }
+
+        .option-card.wrong {
+            border-color: var(--red-warn);
+            background: rgba(255, 82, 82, 0.2);
+        }
+
+        .feedback-box {
+            margin-top: auto;
+            padding: 14px 18px;
+            border-radius: 10px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .feedback-box.correct {
+            background: rgba(0, 230, 118, 0.15);
+            border: 1px solid var(--green-correct);
+            color: #b9f6ca;
+            display: flex;
+        }
+
+        .feedback-box.wrong {
+            background: rgba(255, 82, 82, 0.15);
+            border: 1px solid var(--red-warn);
+            color: #ff8a80;
+            display: flex;
+        }
+
+        .sim-container {
+            background: #080c14;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 14px;
+            margin: 14px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            min-height: 240px;
+        }
+
+        svg.network-sim {
+            width: 100%;
+            max-width: 800px;
+            height: 200px;
+        }
+
+        .net-line {
+            stroke: #2a3b5c;
+            stroke-width: 4;
+            stroke-dasharray: 6;
+            transition: all 0.4s;
+        }
+
+        .net-line.active {
+            stroke: var(--cyan-glow);
+            stroke-dasharray: 0;
+        }
+
+        .net-node-label {
+            fill: #e2e8f0;
+            font-size: 13px;
+            font-family: var(--font-family);
+            font-weight: 600;
+            text-anchor: middle;
+        }
+
+        .drag-zone {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 14px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+        }
+
+        .draggable-item {
+            background: linear-gradient(145deg, #1c2742, #161f36);
+            border: 1px solid rgba(0, 242, 254, 0.4);
+            padding: 8px 14px;
+            border-radius: 8px;
+            cursor: grab;
+            font-weight: 600;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .draggable-item:active {
+            cursor: grabbing;
+            transform: scale(0.96);
+        }
+
+        .drop-target {
+            min-height: 52px;
+            border: 2px dashed rgba(255, 255, 255, 0.25);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            transition: all 0.3s;
+            background: rgba(0, 0, 0, 0.2);
+            font-size: 14px;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .drop-target.filled {
+            border-color: var(--green-correct);
+            background: rgba(0, 230, 118, 0.15);
+            color: #fff;
+            font-weight: 600;
+            border-style: solid;
+        }
+
+        /* 7. TOAST CẢNH BÁO THỜI GIAN */
+        #time-toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #1e293b;
+            color: #fff;
+            padding: 14px 20px;
+            border-radius: 10px;
+            border-left: 5px solid var(--yellow-hint);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+            display: none;
+            z-index: 1000;
+            font-size: 15px;
+            font-weight: 600;
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* 8. MODAL KẾT QUẢ & XÁC NHẬN NỘP BÀI */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(5, 10, 20, 0.88);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-body {
+            background: var(--bg-card);
+            border: var(--border-glow);
+            border-radius: 16px;
+            max-width: 850px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 26px;
+            box-shadow: 0 10px 40px rgba(0, 242, 254, 0.3);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 14px;
+            margin: 18px 0;
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 4px solid var(--cyan-glow);
+            padding: 14px;
+            border-radius: 8px;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            #player-sticky-bar { font-size: 12px; padding: 6px 12px; }
+            header { flex-direction: column; gap: 8px; top: 30px; padding: 8px; }
+            .header-progress { flex-wrap: wrap; justify-content: center; }
+            .station-step { padding: 4px 8px; font-size: 11px; }
+            h1.title { font-size: 24px; }
+            .game-panel { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. THANH THÔNG TIN NGƯỜI CHƠI (CỐ ĐỊNH PHÍA TRÊN CÙNG) -->
+    <div id="player-sticky-bar">
+        <div class="user-tag-group">
+            <span class="user-tag" id="bar-user-name">👤 Khách</span>
+            <span class="user-tag" id="bar-user-class">🏫 --</span>
+            <span class="user-tag" style="color:var(--yellow-hint);">🎯 <strong id="bar-user-score">0</strong> điểm</span>
+            <span class="user-tag" style="color:var(--cyan-glow);">🏁 Trạm <strong id="bar-station-num">1</strong>/4</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:12px;">
+            <div class="timer-badge" id="game-timer">⏱ THỜI GIAN: 45:00</div>
+            <button class="btn-submit-early" onclick="confirmEarlySubmit()">NỘP BÀI</button>
+        </div>
+    </div>
+
+    <!-- 2. HEADER TIẾN TRÌNH & NÚT ĐIỀU KHIỂN -->
+    <header>
+        <div class="header-title">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="9"/>
+                <path d="M3.6 9h16.8M3.6 15h16.8M11.5 3a17 17 0 0 0 0 18M12.5 3a17 17 0 0 1 0 18"/>
+            </svg>
+            NETWORK MISSION 12
+        </div>
+
+        <div class="header-progress" id="progress-bar">
+            <div class="station-step active" id="step-0">Trạm 1: Khởi động</div>
+            <div class="station-step" id="step-1">Trạm 2: Khám phá</div>
+            <div class="station-step" id="step-2">Trạm 3: Luyện tập</div>
+            <div class="station-step" id="step-3">Trạm 4: Vận dụng</div>
+        </div>
+
+        <div class="header-status">
+            <div class="score-badge">Điểm: <span id="score-val">0</span>/100</div>
+            <button class="btn-ctrl" id="sound-btn" onclick="toggleSound()">🔊 Bật</button>
+            <button class="btn-ctrl" onclick="openReviewModal()">📚 Kiến thức</button>
+        </div>
+    </header>
+
+    <!-- 3. CONTAINER CHÍNH -->
+    <main>
+        <div class="game-panel" id="main-panel">
+            <!-- Nội dung thay đổi linh hoạt qua JS -->
+        </div>
+    </main>
+
+    <!-- 4. TOAST THÔNG BÁO CẢNH BÁO THỜI GIAN -->
+    <div id="time-toast"></div>
+
+    <!-- 5. MODAL XÁC NHẬN NỘP BÀI SỚM -->
+    <div class="modal-overlay" id="confirm-submit-modal">
+        <div class="modal-body" style="max-width: 480px; text-align: center;">
+            <h3 style="color: var(--yellow-hint); font-size: 22px; margin-bottom: 12px;">XÁC NHẬN NỘP BÀI SỚM?</h3>
+            <p style="font-size: 16px; color: var(--text-muted); line-height: 1.6; margin-bottom: 24px;">
+                Bạn có chắc chắn muốn nộp bài ngay lúc này? Sau khi xác nhận, toàn bộ câu trả lời sẽ được gửi về máy chủ và không thể thay đổi thêm kết quả.
+            </p>
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button class="btn-secondary" onclick="closeConfirmModal()">TIẾP TỤC LÀM</button>
+                <button class="btn-primary" style="background: linear-gradient(135deg, #00e676, #00b0ff);" onclick="executeSubmit('NỘP SỚM')">XÁC NHẬN NỘP</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. MODAL INFOGRAPHIC TỔNG KẾT KIẾN THỨC -->
+    <div class="modal-overlay" id="review-modal">
+        <div class="modal-body">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+                <h2 style="color: var(--cyan-glow); font-size: 20px;">BẢN ĐỒ THIẾT BỊ MẠNG THÔNG DỤNG (TIN HỌC 12)</h2>
+                <button class="btn-ctrl" onclick="closeReviewModal()">Đóng ✕</button>
+            </div>
+            
+            <div class="info-grid">
+                <div class="info-card">
+                    <h3 style="color:var(--cyan-glow);">1. HUB (Bộ chia tín hiệu)</h3>
+                    <p style="color:var(--text-muted); font-size:14px;">Nhận tín hiệu từ một cổng rồi <strong>phát đến tất cả các cổng còn lại</strong>. Dễ gây xung đột tín hiệu (collision), phù hợp mạng rất nhỏ.</p>
+                </div>
+                <div class="info-card">
+                    <h3 style="color:var(--cyan-glow);">2. SWITCH (Bộ chuyển mạch)</h3>
+                    <p style="color:var(--text-muted); font-size:14px;">Xác định cổng kết nối giữa thiết bị gửi và nhận, <strong>thiết lập tạm thời kênh truyền riêng</strong>. Hạn chế xung đột, tối ưu cho mạng LAN phòng máy.</p>
+                </div>
+                <div class="info-card">
+                    <h3 style="color:var(--cyan-glow);">3. ACCESS POINT (WAP / AP)</h3>
+                    <p style="color:var(--text-muted); font-size:14px;">Tạo điểm truy cập không dây, giúp thiết bị di động kết nối vào mạng qua sóng <strong>Wi-Fi</strong> và mở rộng phạm vi địa lý của mạng LAN.</p>
+                </div>
+                <div class="info-card">
+                    <h3 style="color:var(--cyan-glow);">4. ROUTER (Bộ định tuyến)</h3>
+                    <p style="color:var(--text-muted); font-size:14px;">Dùng để <strong>chuyển tiếp dữ liệu giữa các mạng khác nhau</strong> (từ LAN qua cổng LAN và ra ngoài qua cổng WAN). Router gia đình thường tích hợp Wi-Fi.</p>
+                </div>
+                <div class="info-card">
+                    <h3 style="color:var(--cyan-glow);">5. MODEM (Bộ điều chế tín hiệu)</h3>
+                    <p style="color:var(--text-muted); font-size:14px;"><strong>Chuyển đổi tín hiệu</strong> hai chiều giữa tín hiệu số (digital trong LAN) và tín hiệu tương tự (analog trên môi trường truyền dẫn Internet như quang, thoại, di động).</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================================================= -->
+    <!-- JAVASCRIPT ENGINE & SYSTEM LOGIC                                 -->
+    <!-- ================================================================= -->
+    <script>
+        // ===============================================================
+        // CẤU HÌNH GIÁO VIÊN – CHỈNH TẠI ĐÂY
+        // ===============================================================
+        const APP_CONFIG = {
+            durationMinutes: 45,
+            spreadsheetId: "1Yt_SmVK1Tza7Eo7eIhOrg61eyq1wI8yD04DdS3D1VEQ",
+            // Dán URL Web App triển khai từ Google Apps Script vào đây:
+            googleScriptUrl: "https://script.google.com/macros/s/AKfycbwtfaeVO1IFI4qS0Ug5PBc99P7DLF1L3JxnGRf2vw2AFatoOGiAs2HoD_kQZXaI9duuww/exec",
+            maxGroupMembers: 8
+        };
+
+        // ===============================================================
+        // NGÂN HÀNG CÂU HỎI – GIÁO VIÊN CHỈNH TẠI ĐÂY
+        // ===============================================================
+        const GAME_DATA = {
+            station1: [
+                {
+                    id: "KD01",
+                    title: "NHIỆM VỤ 1: KẾT NỐI MẠNG LAN CƠ BẢN",
+                    prompt: "Quan sát sơ đồ phòng học: Kết nối trong mạng LAN thường có thể được thiết lập bằng cách nào?",
+                    options: [
+                        { id: "A", text: "A. Chỉ bằng Bluetooth" },
+                        { id: "B", text: "B. Cáp mạng hoặc kết nối không dây Wi-Fi", correct: true },
+                        { id: "C", text: "C. Chỉ bằng cổng USB máy in" },
+                        { id: "D", text: "D. Chỉ thông qua mạng di động 4G/5G" }
+                    ],
+                    hint: "Trong phòng học hoặc gia đình, máy tính bàn thường cắm dây mạng hoặc laptop bắt sóng không dây.",
+                    explanation: "Chính xác! Mạng LAN thường được thiết lập qua cáp mạng (có dây) hoặc qua sóng Wi-Fi (không dây).",
+                    points: 3
+                },
+                {
+                    id: "KD02",
+                    title: "NHIỆM VỤ 2: DỰ ĐOÁN THIẾT BỊ MẠNG",
+                    prompt: "Hãy chọn các thiết bị có vai trò TRỰC TIẾP trong việc kết nối và chia sẻ mạng máy tính:",
+                    options: [
+                        { id: "A", text: "Bàn phím và Chuột máy tính" },
+                        { id: "B", text: "Loa và Tai nghe Bluetooth" },
+                        { id: "C", text: "Switch, Access Point, Router", correct: true },
+                        { id: "D", text: "Màn hình hiển thị" }
+                    ],
+                    hint: "Thiết bị mạng là phần cứng dùng để truyền tải và chuyển tiếp luồng tín hiệu dữ liệu.",
+                    explanation: "Rất chuẩn! Switch, AP, Router, Modem là các thiết bị kết nối mạng cốt lõi.",
+                    points: 3
+                },
+                {
+                    id: "KD03",
+                    title: "NHIỆM VỤ 3: TƯ DUY LIÊN MẠNG",
+                    prompt: "Theo em, thiết bị Hub hoặc Switch có thể tự mình kết nối hai mạng LAN cách xa nhau hàng nghìn km qua Internet được không?",
+                    options: [
+                        { id: "A", text: "Có, chỉ cần dây cáp mạng thật dài" },
+                        { id: "B", text: "Không thể, cần thiết bị định tuyến chuyên dụng (Router)", correct: true }
+                    ],
+                    hint: "Hub/Switch chỉ quản lý đường truyền nội bộ trong 1 LAN nhất định.",
+                    explanation: "Đúng! Hub và Switch chỉ hoạt động trong mạng nội bộ. Muốn kết nối giữa các LAN khác nhau qua Internet ta cần Router.",
+                    points: 4
+                }
+            ],
+            
+            station3_identify: [
+                {
+                    id: "LT01",
+                    q: "Thiết bị nhận tín hiệu từ một cổng rồi phát tán đến TẤT CẢ các cổng còn lại là:",
+                    options: ["Hub", "Switch", "Router", "Modem"],
+                    ans: 0,
+                    explain: "Hub phát tán dữ liệu tới mọi cổng nên dễ gây xung đột tín hiệu."
+                },
+                {
+                    id: "LT02",
+                    q: "Thiết bị xác định cổng nhận, thiết lập kênh truyền riêng tạm thời để tránh xung đột:",
+                    options: ["Hub", "Switch", "Cáp UTP", "Access Point"],
+                    ans: 1,
+                    explain: "Switch có bảng chuyển mạch thông minh, chỉ gửi dữ liệu đến cổng máy nhận."
+                },
+                {
+                    id: "LT03",
+                    q: "Thiết bị cung cấp điểm truy cập Wi-Fi giúp thiết bị di động kết nối vào mạng LAN:",
+                    options: ["Wireless Access Point (AP)", "Switch", "Modem ADSL", "Cáp RJ45"],
+                    ans: 0,
+                    explain: "WAP tạo kết nối vô tuyến (Wi-Fi), mở rộng tầm phủ sóng của mạng LAN."
+                },
+                {
+                    id: "LT04",
+                    q: "Thiết bị thực hiện chức năng 'định tuyến' (routing), chuyển tiếp gói tin giữa các mạng khác nhau:",
+                    options: ["Router", "Hub", "Bàn phím mạng", "Giắc cắm RJ45"],
+                    ans: 0,
+                    explain: "Router kết nối LAN với WAN và dẫn đường luồng dữ liệu liên mạng."
+                },
+                {
+                    id: "LT05",
+                    q: "Thiết bị có chức năng điều chế và giải điều chế, chuyển đổi tín hiệu số thành tương tự và ngược lại:",
+                    options: ["Modem", "Switch", "Access Point", "Hub"],
+                    ans: 0,
+                    explain: "Modem chuyển đổi tín hiệu để dữ liệu số trong LAN có thể đi trên môi trường truyền dẫn Internet."
+                }
+            ],
+
+            station3_troubleshoot: [
+                {
+                    id: "CD01",
+                    title: "SỰ CỐ 1: MÁY TÍNH BÀN MẤT MẠNG",
+                    desc: "Học sinh phát hiện máy tính phòng thực hành có biểu tượng mạng gạch chéo đỏ. Quan sát phía sau thùng máy thấy đầu cáp mạng UTP bị tụt lỏng khỏi cổng RJ45. Em cần xử lý thế nào?",
+                    options: [
+                        { text: "Cắm chặt lại đầu giắc RJ45 vào cổng mạng cho đến khi nghe tiếng 'tách'", correct: true },
+                        { text: "Cài đặt lại toàn bộ hệ điều hành Windows" },
+                        { text: "Thay màn hình mới" },
+                        { text: "Khởi động lại nguồn điện cả phòng máy" }
+                    ],
+                    explain: "Đúng! Khi kết nối vật lý bằng cáp mạng UTP lỏng, chỉ cần kiểm tra và cắm chắc chắn lại đầu RJ45."
+                },
+                {
+                    id: "CD02",
+                    title: "SỰ CỐ 2: LAPTOP KHÔNG THẤY WI-FI",
+                    desc: "Giáo viên mang laptop vào phòng học nhưng không vào được mạng, biểu tượng sóng Wi-Fi hiện hình máy bay và trạng thái 'Wi-Fi: OFF'. Cần làm gì?",
+                    options: [
+                        { text: "Bật lại công tắc kết nối Wi-Fi trên hệ điều hành sang trạng thái 'ON'", correct: true },
+                        { text: "Tháo pin laptop ra phơi khô" },
+                        { text: "Xóa toàn bộ giáo án trên máy" },
+                        { text: "Đi mua ngay Router mới" }
+                    ],
+                    explain: "Chính xác! Card mạng không dây đang bị tắt, chỉ cần chuyển trạng thái Wi-Fi sang ON."
+                },
+                {
+                    id: "CD03",
+                    title: "SỰ CỐ 3: ĐIỆN THOẠI BẮT SAI SÓNG",
+                    desc: "Tại lớp học có mạng Wi-Fi tên 'THPT_LOPHOC', nhưng học sinh lại đang chọn kết nối vào mạng lạ 'Quang_Cafe_HangXom' có mật khẩu và sóng rất yếu. Thao tác đúng là?",
+                    options: [
+                        { text: "Vào cài đặt Wi-Fi, chọn đúng tên trạm Wi-Fi 'THPT_LOPHOC' của lớp", correct: true },
+                        { text: "Tắt nguồn điện thoại" },
+                        { text: "Bấm reset lại modem của nhà mạng trường học" }
+                    ],
+                    explain: "Đúng! Cần nhận biết và chọn đúng tên trạm phát sóng (SSID) thuộc mạng nội bộ của lớp."
+                },
+                {
+                    id: "CD04",
+                    title: "SỰ CỐ 4: NÂNG CẤP PHÒNG MÁY 20 MÁY",
+                    desc: "Phòng thực hành có 20 máy tính trước đây dùng 1 bộ Hub cũ nên mạng thường xuyên nghẽn và xung đột dữ liệu. Giải pháp tối ưu theo SGK là gì?",
+                    options: [
+                        { text: "Thay thế Hub bằng Switch 24 cổng để phân luồng dữ liệu độc lập", correct: true },
+                        { text: "Tiếp tục lắp thêm 3 bộ Hub nối tiếp nhau" },
+                        { text: "Chuyển hết sang dùng chuột không dây" }
+                    ],
+                    explain: "Chuẩn xác! Mạng từ vài chục máy tính trở lên bắt buộc ưu tiên Switch để hạn chế tối đa xung đột tín hiệu."
+                }
+            ]
+        };
+
+        // ===============================================================
+        // HỆ THỐNG QUẢN LÝ PHIÊN (SESSION & STATE MANAGEMENT)
+        // ===============================================================
+        let sessionData = {
+            sessionId: "",
+            mode: "CANHAN", // "CANHAN" hoặc "NHOM"
+            playerName: "",
+            className: "",
+            studentId: "",
+            teamName: "",
+            members: [],
+            startTime: null,
+            endTime: null,
+            durationStr: "",
+            status: "DANG_LAM",
+            scoreStation1: 0,
+            scoreStation2: 0,
+            scoreStation3: 0,
+            scoreStation4: 0,
+            totalScore: 0,
+            correctCount: 0,
+            wrongCount: 0,
+            hintsUsed: 0,
+            currentStation: 0,
+            lastStationCompleted: 0,
+            answersLog: []
+        };
+
+        let state = {
+            keysUnlocked: [false, false, false, false],
+            currentSubStep: 0,
+            attempts: {},
+            timeLeftSec: APP_CONFIG.durationMinutes * 60,
+            timerInterval: null,
+            warned10: false,
+            warned5: false,
+            warned1: false,
+            resultSubmitted: false,
+            designPlacement: { 1: null, 2: null, 3: null, 4: null },
+            holdingItem: null
+        };
+
+        // Âm thanh Web Audio API
+        let audioCtx = null;
+        let soundEnabled = false;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function toggleSound() {
+            initAudio();
+            soundEnabled = !soundEnabled;
+            document.getElementById("sound-btn").innerHTML = soundEnabled ? "🔊 Bật" : "🔇 Tắt";
+            if (soundEnabled) playBeep(600, 0.1);
+        }
+
+        function playBeep(freq, duration, type = "sine") {
+            if (!soundEnabled || !audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {}
+        }
+
+        function playSfx(type) {
+            if (!soundEnabled) return;
+            initAudio();
+            if (type === 'correct') {
+                playBeep(587, 0.1);
+                setTimeout(() => playBeep(880, 0.2), 100);
+            } else if (type === 'wrong') {
+                playBeep(220, 0.2, "sawtooth");
+                setTimeout(() => playBeep(180, 0.3, "sawtooth"), 120);
+            } else if (type === 'unlock') {
+                playBeep(523, 0.1);
+                setTimeout(() => playBeep(659, 0.1), 100);
+                setTimeout(() => playBeep(784, 0.1), 200);
+                setTimeout(() => playBeep(1046, 0.3), 300);
+            }
+        }
+
+        // Lưu & Khôi phục LocalStorage
+        function saveLocalState() {
+            const payload = {
+                sessionData,
+                state: {
+                    keysUnlocked: state.keysUnlocked,
+                    currentSubStep: state.currentSubStep,
+                    attempts: state.attempts,
+                    timeLeftSec: state.timeLeftSec,
+                    resultSubmitted: state.resultSubmitted
+                }
+            };
+            localStorage.setItem("NM12_SAVED_SESSION", JSON.stringify(payload));
+        }
+
+        function tryRestoreSession() {
+            const raw = localStorage.getItem("NM12_SAVED_SESSION");
+            if (!raw) return false;
+            try {
+                const parsed = JSON.parse(raw);
+                if (parsed.sessionData && parsed.sessionData.sessionId && !parsed.state.resultSubmitted) {
+                    sessionData = parsed.sessionData;
+                    state.keysUnlocked = parsed.state.keysUnlocked;
+                    state.currentSubStep = parsed.state.currentSubStep;
+                    state.attempts = parsed.state.attempts;
+                    state.timeLeftSec = parsed.state.timeLeftSec;
+                    state.resultSubmitted = parsed.state.resultSubmitted;
+                    return true;
+                }
+            } catch (e) {}
+            return false;
+        }
+
+        // ===============================================================
+        // MÀN HÌNH ĐĂNG NHẬP (CÁ NHÂN / NHÓM)
+        // ===============================================================
+        let authMode = "CANHAN";
+
+        function renderAuthScreen() {
+            const panel = document.getElementById("main-panel");
+            panel.innerHTML = `
+                <div class="auth-container">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h1 class="title" style="font-size: 30px;">ĐĂNG NHẬP NETWORK MISSION</h1>
+                        <p style="color: var(--text-muted); font-size: 15px;">Hệ thống xác thực Kỹ sư mạng - Môn Tin học 12</p>
+                    </div>
+
+                    <div class="tab-group">
+                        <div class="tab-btn ${authMode === 'CANHAN' ? 'active' : ''}" onclick="switchAuthMode('CANHAN')">👤 CHƠI CÁ NHÂN</div>
+                        <div class="tab-btn ${authMode === 'NHOM' ? 'active' : ''}" onclick="switchAuthMode('NHOM')">👥 CHƠI THEO NHÓM</div>
+                    </div>
+
+                    <div id="auth-form-body">
+                        ${authMode === 'CANHAN' ? getPersonalFormHtml() : getGroupFormHtml()}
+                    </div>
+
+                    <div style="text-align: center; margin-top: 24px;">
+                        <button class="btn-primary" style="width: 100%; font-size: 18px; padding: 14px;" onclick="validateAndStartMission()">
+                            🚀 BẮT ĐẦU NHIỆM VỤ
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function switchAuthMode(mode) {
+            authMode = mode;
+            renderAuthScreen();
+        }
+
+        function getPersonalFormHtml() {
+            return `
+                <div class="form-group">
+                    <label>HỌ VÀ TÊN HỌC SINH *</label>
+                    <input type="text" class="form-input" id="inp-fullname" placeholder="Ví dụ: Nguyễn Văn An" value="${sessionData.playerName || ''}">
+                </div>
+                <div class="form-group">
+                    <label>LỚP *</label>
+                    <input type="text" class="form-input" id="inp-class" placeholder="Ví dụ: 12A1" value="${sessionData.className || ''}">
+                </div>
+                <div class="form-group">
+                    <label>SỐ THỨ TỰ / MÃ HỌC SINH (Tùy chọn)</label>
+                    <input type="text" class="form-input" id="inp-stt" placeholder="Ví dụ: 01" value="${sessionData.studentId || ''}">
+                </div>
+            `;
+        }
+
+        function getGroupFormHtml() {
+            const members = sessionData.members.length > 0 ? sessionData.members : ["", ""];
+            return `
+                <div class="form-group">
+                    <label>TÊN LỚP *</label>
+                    <input type="text" class="form-input" id="inp-group-class" placeholder="Ví dụ: 12A1" value="${sessionData.className || ''}">
+                </div>
+                <div class="form-group">
+                    <label>TÊN NHÓM *</label>
+                    <input type="text" class="form-input" id="inp-group-name" placeholder="Ví dụ: Nhóm 3 (Kỹ sư Đakrông)" value="${sessionData.teamName || ''}">
+                </div>
+                <div class="form-group">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <label>DANH SÁCH THÀNH VIÊN (Tối thiểu 2, tối đa ${APP_CONFIG.maxGroupMembers}) *</label>
+                        <button type="button" class="btn-ctrl" style="font-size:12px; padding:4px 8px;" onclick="addGroupMemberInput()">+ THÊM THÀNH VIÊN</button>
+                    </div>
+                    <div class="member-list-box" id="member-list-inputs">
+                        ${members.map((m, idx) => `
+                            <div class="member-row" id="mrow-${idx}">
+                                <input type="text" class="form-input member-inp" style="flex:1;" placeholder="Họ tên thành viên ${idx + 1}" value="${m}">
+                                ${idx >= 2 ? `<button type="button" class="btn-ctrl" style="color:var(--red-warn);" onclick="removeMemberRow(${idx})">✕</button>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function addGroupMemberInput() {
+            const rows = document.querySelectorAll(".member-row");
+            if (rows.length >= APP_CONFIG.maxGroupMembers) {
+                alert(`Mỗi nhóm tối đa ${APP_CONFIG.maxGroupMembers} thành viên!`);
+                return;
+            }
+            const container = document.getElementById("member-list-inputs");
+            const newIdx = rows.length;
+            const div = document.createElement("div");
+            div.className = "member-row";
+            div.id = `mrow-${newIdx}`;
+            div.innerHTML = `
+                <input type="text" class="form-input member-inp" style="flex:1;" placeholder="Họ tên thành viên ${newIdx + 1}">
+                <button type="button" class="btn-ctrl" style="color:var(--red-warn);" onclick="removeMemberRow(${newIdx})">✕</button>
+            `;
+            container.appendChild(div);
+        }
+
+        function removeMemberRow(idx) {
+            const el = document.getElementById(`mrow-${idx}`);
+            if (el) el.remove();
+        }
+
+        function generateSessionId(className) {
+            const now = new Date();
+            const dateStr = now.getFullYear().toString() +
+                String(now.getMonth() + 1).padStart(2, '0') +
+                String(now.getDate()).padStart(2, '0');
+            const cleanClass = className.replace(/[^a-zA-Z0-9]/g, '').toUpperCase() || "L12";
+            const randomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+            return `NM12-${dateStr}-${cleanClass}-${randomCode}`;
+        }
+
+        function validateAndStartMission() {
+            if (authMode === "CANHAN") {
+                const name = document.getElementById("inp-fullname").value.trim();
+                const cls = document.getElementById("inp-class").value.trim();
+                const stt = document.getElementById("inp-stt").value.trim();
+
+                if (!name) { alert("Vui lòng nhập Họ và tên học sinh!"); return; }
+                if (!cls) { alert("Vui lòng nhập Tên lớp!"); return; }
+
+                sessionData.mode = "CANHAN";
+                sessionData.playerName = name;
+                sessionData.className = cls;
+                sessionData.studentId = stt;
+                sessionData.teamName = "";
+                sessionData.members = [name];
+            } else {
+                const cls = document.getElementById("inp-group-class").value.trim();
+                const team = document.getElementById("inp-group-name").value.trim();
+                const inps = document.querySelectorAll(".member-inp");
+                const members = [];
+                inps.forEach(i => {
+                    if (i.value.trim()) members.push(i.value.trim());
+                });
+
+                if (!cls) { alert("Vui lòng nhập Tên lớp!"); return; }
+                if (!team) { alert("Vui lòng nhập Tên nhóm!"); return; }
+                if (members.length < 2) { alert("Nhóm cần có ít nhất 2 thành viên!"); return; }
+
+                sessionData.mode = "NHOM";
+                sessionData.className = cls;
+                sessionData.teamName = team;
+                sessionData.playerName = team;
+                sessionData.members = members;
+            }
+
+            sessionData.sessionId = generateSessionId(sessionData.className);
+            sessionData.startTime = new Date().toLocaleTimeString('vi-VN');
+            sessionData.status = "DANG_LAM";
+
+            // Bật âm thanh tương tác
+            initAudio();
+            toggleSound();
+
+            // Cập nhật thanh hiển thị phía trên
+            document.getElementById("player-sticky-bar").style.display = "flex";
+            updateStickyBar();
+
+            // Khởi động đồng hồ 45 phút
+            startCountdown();
+
+            // Chuyển Trạm 1
+            sessionData.currentStation = 0;
+            state.currentSubStep = 0;
+            saveLocalState();
+            renderStation1();
+        }
+
+        function updateStickyBar() {
+            const userIcon = sessionData.mode === "CANHAN" ? "👤" : "👥";
+            document.getElementById("bar-user-name").textContent = `${userIcon} ${sessionData.playerName}`;
+            document.getElementById("bar-user-class").textContent = `🏫 ${sessionData.className}`;
+            document.getElementById("bar-user-score").textContent = sessionData.totalScore;
+            document.getElementById("bar-station-num").textContent = sessionData.currentStation + 1;
+            document.getElementById("score-val").textContent = sessionData.totalScore;
+        }
+
+        // ===============================================================
+        // ĐỒNG HỒ ĐẾM NGƯỢC 45 PHÚT & CẢNH BÁO
+        // ===============================================================
+        function startCountdown() {
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            state.timerInterval = setInterval(() => {
+                if (state.timeLeftSec > 0) {
+                    state.timeLeftSec--;
+                    updateTimerDisplay();
+                    checkTimeWarnings();
+                    if (state.timeLeftSec % 10 === 0) saveLocalState();
+                } else {
+                    clearInterval(state.timerInterval);
+                    handleTimeOut();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(state.timeLeftSec / 60);
+            const secs = state.timeLeftSec % 60;
+            const text = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            const badge = document.getElementById("game-timer");
+            badge.textContent = `⏱ THỜI GIAN: ${text}`;
+
+            // Cập nhật màu sắc theo thời gian còn lại
+            badge.className = "timer-badge";
+            if (state.timeLeftSec <= 60) {
+                badge.classList.add("timer-warning-1");
+            } else if (state.timeLeftSec <= 300) {
+                badge.classList.add("timer-warning-5");
+            } else if (state.timeLeftSec <= 600) {
+                badge.classList.add("timer-warning-10");
+            }
+        }
+
+        function checkTimeWarnings() {
+            if (state.timeLeftSec === 600 && !state.warned10) {
+                state.warned10 = true;
+                showTimeToast("⏰ Còn 10 phút! Hãy đẩy nhanh tiến độ vượt trạm.");
+            } else if (state.timeLeftSec === 300 && !state.warned5) {
+                state.warned5 = true;
+                showTimeToast("⏰ Còn 5 phút – hãy hoàn thành các nhiệm vụ còn lại!");
+            } else if (state.timeLeftSec === 60 && !state.warned1) {
+                state.warned1 = true;
+                showTimeToast("⏰ Còn 1 phút! Hệ thống sắp tự động nộp bài.");
+            }
+        }
+
+        function showTimeToast(msg) {
+            const toast = document.getElementById("time-toast");
+            toast.textContent = msg;
+            toast.style.display = "block";
+            setTimeout(() => { toast.style.display = "none"; }, 5000);
+        }
+
+        function handleTimeOut() {
+            sessionData.status = "HẾT GIỜ";
+            showTimeToast("🚨 HẾT THỜI GIAN! Hệ thống đang tự động tổng kết và lưu kết quả...");
+            executeSubmit("HẾT GIỜ");
+        }
+
+        // ===============================================================
+        // NỘP BÀI SỚM & XÁC NHẬN
+        // ===============================================================
+        function confirmEarlySubmit() {
+            if (state.resultSubmitted) {
+                alert("Bài làm đã được nộp!");
+                return;
+            }
+            document.getElementById("confirm-submit-modal").style.display = "flex";
+        }
+
+        function closeConfirmModal() {
+            document.getElementById("confirm-submit-modal").style.display = "none";
+        }
+
+        function executeSubmit(finalStatus) {
+            closeConfirmModal();
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            sessionData.endTime = new Date().toLocaleTimeString('vi-VN');
+            sessionData.status = finalStatus;
+
+            // Tính toán tổng thời gian làm bài
+            const elapsedSec = (APP_CONFIG.durationMinutes * 60) - state.timeLeftSec;
+            const elMins = Math.floor(elapsedSec / 60);
+            const elSecs = elapsedSec % 60;
+            sessionData.durationStr = `${elMins} phút ${elSecs} giây`;
+
+            // Tính tổng điểm từ các trạm
+            sessionData.totalScore = sessionData.scoreStation1 + sessionData.scoreStation2 + sessionData.scoreStation3 + sessionData.scoreStation4;
+
+            // Hiển thị màn hình kết quả ngay lập tức
+            renderResultScreen();
+
+            // Gửi dữ liệu lên Google Sheets thông qua Apps Script
+            syncResultToGoogleSheet();
+        }
+
+        // ===============================================================
+        // GỬI KẾT QUẢ VỀ GOOGLE SHEETS QUA APPS SCRIPT WEB APP
+        // ===============================================================
+        function syncResultToGoogleSheet() {
+            if (state.resultSubmitted) return;
+
+            const syncCard = document.getElementById("sync-status-card");
+            if (syncCard) {
+                syncCard.innerHTML = `<span style="color:var(--yellow-hint);">⏳ Đang đồng bộ kết quả lên hệ thống Google Sheets...</span>`;
+            }
+
+            // Xếp loại học sinh
+            let rank = "NETWORK TRAINEE";
+            if (sessionData.totalScore >= 90) rank = "NETWORK MASTER";
+            else if (sessionData.totalScore >= 75) rank = "NETWORK EXPERT";
+            else if (sessionData.totalScore >= 60) rank = "NETWORK TECHNICIAN";
+
+            const payload = {
+                timestamp: new Date().toLocaleString('vi-VN'),
+                sessionId: sessionData.sessionId,
+                mode: sessionData.mode,
+                playerName: sessionData.playerName,
+                className: sessionData.className,
+                members: sessionData.members.join(", "),
+                startTime: sessionData.startTime,
+                endTime: sessionData.endTime,
+                duration: sessionData.durationStr,
+                scoreStation1: sessionData.scoreStation1,
+                scoreStation2: sessionData.scoreStation2,
+                scoreStation3: sessionData.scoreStation3,
+                scoreStation4: sessionData.scoreStation4,
+                totalScore: sessionData.totalScore,
+                correctCount: sessionData.correctCount,
+                wrongCount: sessionData.wrongCount,
+                hintsUsed: sessionData.hintsUsed,
+                lastStation: sessionData.lastStationCompleted,
+                status: sessionData.status,
+                ranking: rank,
+                answersDetail: JSON.stringify(sessionData.answersLog)
+            };
+
+            // Lưu dự phòng offline vào LocalStorage
+            localStorage.setItem("NM12_OFFLINE_PAYLOAD", JSON.stringify(payload));
+
+            if (!APP_CONFIG.googleScriptUrl || APP_CONFIG.googleScriptUrl === "DAN_URL_WEB_APP_VAO_DAY") {
+                if (syncCard) {
+                    syncCard.innerHTML = `<span style="color:var(--yellow-hint);">⚠️ Đã lưu offline trên máy tính (Chưa cấu hình URL Google Script).</span>`;
+                }
+                saveLocalState();
+                return;
+            }
+
+            fetch(APP_CONFIG.googleScriptUrl, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+            .then(() => {
+                state.resultSubmitted = true;
+                saveLocalState();
+                if (syncCard) {
+                    syncCard.innerHTML = `<span style="color:var(--green-correct); font-weight:bold;">✅ KẾT QUẢ ĐÃ ĐƯỢC LƯU LÊN HỆ THỐNG THÀNH CÔNG!</span>`;
+                }
+            })
+            .catch(err => {
+                console.error("Gửi kết quả thất bại:", err);
+                if (syncCard) {
+                    syncCard.innerHTML = `
+                        <div style="color:var(--red-warn);">⚠️ Chưa thể gửi kết quả lên hệ thống (Lỗi kết nối/Mất Internet).</div>
+                        <div style="font-size:13px; color:var(--text-muted); margin-top:4px;">Kết quả đã được bảo lưu an toàn trên máy này.</div>
+                        <button class="btn-ctrl" style="margin-top:8px;" onclick="syncResultToGoogleSheet()">🔄 THỬ GỬI LẠI</button>
+                    `;
+                }
+            });
+        }
+
+        // ===============================================================
+        // TIẾN TRÌNH VÀ BỘ KHÓA TRẠM
+        // ===============================================================
+        function logAnswer(qId, stationNum, ansText, isCorrect) {
+            sessionData.answersLog.push({
+                questionId: qId,
+                station: stationNum,
+                answer: ansText,
+                correct: isCorrect
+            });
+            if (isCorrect) sessionData.correctCount++;
+            else sessionData.wrongCount++;
+            saveLocalState();
+        }
+
+        function unlockKey(index) {
+            state.keysUnlocked[index] = true;
+            sessionData.lastStationCompleted = Math.max(sessionData.lastStationCompleted, index + 1);
+            playSfx('unlock');
+            updateHeaderProgress();
+            saveLocalState();
+        }
+
+        function updateHeaderProgress() {
+            for (let i = 0; i < 4; i++) {
+                const el = document.getElementById(`step-${i}`);
+                if (!el) continue;
+                el.className = "station-step";
+                if (state.keysUnlocked[i]) {
+                    el.classList.add("completed");
+                } else if (sessionData.currentStation === i) {
+                    el.classList.add("active");
+                }
+            }
+            updateStickyBar();
+        }
+
+        // ===============================================================
+        // NỘI DUNG 4 TRẠM (GIỮ NGUYÊN 100% CẤU TRÚC VÀ LOGIC BAN ĐẦU)
+        // ===============================================================
+
+        // TRẠM 1: KHỞI ĐỘNG
+        function renderStation1() {
+            updateHeaderProgress();
+            const q = GAME_DATA.station1[state.currentSubStep];
+            const panel = document.getElementById("main-panel");
+
+            panel.innerHTML = `
+                <h2 class="station-title">
+                    <span>TRẠM 1: KHỞI ĐỘNG - MẠNG GẶP SỰ CỐ</span>
+                    <span style="font-size: 15px; color: var(--text-muted);">(${state.currentSubStep + 1}/3)</span>
+                </h2>
+                
+                <div class="sim-container" style="min-height: 180px;">
+                    <svg class="network-sim" viewBox="0 0 700 160">
+                        <path d="M 80 80 a 25 25 0 0 1 40 -15 a 35 35 0 0 1 60 10 a 25 25 0 0 1 10 35 a 20 20 0 0 1 -20 20 l -80 0 a 25 25 0 0 1 -10 -50" fill="#1e293b" stroke="#00f2fe" stroke-width="2"/>
+                        <text x="135" y="95" class="net-node-label">🌐 Internet ISP</text>
+                        <line x1="210" y1="95" x2="330" y2="95" class="net-line active" stroke="#ffd600"/>
+                        <circle cx="270" cy="95" r="14" fill="#ff5252"/>
+                        <text x="270" y="100" fill="#fff" font-size="16" font-weight="bold" text-anchor="middle">?</text>
+                        <rect x="350" y="40" width="130" height="110" rx="8" fill="#131b2e" stroke="#4facfe" stroke-dasharray="4"/>
+                        <text x="415" y="65" class="net-node-label">💻 20 Máy tính</text>
+                        <text x="415" y="95" class="net-node-label">📱 Điện thoại</text>
+                        <text x="415" y="125" class="net-node-label">📶 Wi-Fi</text>
+                    </svg>
+                </div>
+
+                <p class="prompt"><strong>${q.title}:</strong> ${q.prompt}</p>
+
+                <div class="options-grid">
+                    ${q.options.map(opt => `
+                        <div class="option-card" onclick="handleStation1Answer('${opt.id}')" id="opt-${opt.id}">
+                            ${opt.text}
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="feedback-box" id="feedback-box">
+                    <div>
+                        <div id="fb-text" style="font-weight: bold; font-size: 16px;"></div>
+                        <div class="hint-text" id="fb-hint"></div>
+                    </div>
+                    <button class="btn-primary" id="next-btn" style="display:none; padding: 8px 18px; font-size: 15px;" onclick="nextStation1Step()">Tiếp tục ➔</button>
+                </div>
+            `;
+        }
+
+        function handleStation1Answer(chosenId) {
+            const q = GAME_DATA.station1[state.currentSubStep];
+            const opt = q.options.find(o => o.id === chosenId);
+            const fbBox = document.getElementById("feedback-box");
+            const fbText = document.getElementById("fb-text");
+            const fbHint = document.getElementById("fb-hint");
+            const nextBtn = document.getElementById("next-btn");
+
+            document.querySelectorAll(".option-card").forEach(el => el.classList.remove("selected", "correct", "wrong"));
+            const chosenEl = document.getElementById(`opt-${chosenId}`);
+
+            if (opt.correct) {
+                chosenEl.classList.add("correct");
+                fbBox.className = "feedback-box correct";
+                fbText.textContent = "CHÍNH XÁC! " + q.explanation;
+                fbHint.textContent = "";
+                
+                if (!state.attempts[q.id]) {
+                    state.attempts[q.id] = true;
+                    sessionData.scoreStation1 += q.points;
+                    sessionData.totalScore += q.points;
+                    updateStickyBar();
+                    logAnswer(q.id, 1, opt.text, true);
+                }
+                playSfx('correct');
+                nextBtn.style.display = "block";
+            } else {
+                chosenEl.classList.add("wrong");
+                fbBox.className = "feedback-box wrong";
+                fbText.textContent = "CHƯA CHÍNH XÁC - HÃY THỬ LẠI!";
+                fbHint.textContent = "💡 Gợi ý: " + q.hint;
+                sessionData.hintsUsed++;
+                logAnswer(q.id, 1, opt.text, false);
+                playSfx('wrong');
+            }
+        }
+
+        function nextStation1Step() {
+            if (state.currentSubStep < GAME_DATA.station1.length - 1) {
+                state.currentSubStep++;
+                renderStation1();
+            } else {
+                unlockKey(0);
+                showStationTransition(
+                    "ĐÃ MỞ KHÓA MẢNH 1: NHẬN DIỆN VẤN ĐỀ",
+                    "Bạn đã xác định thành công các yêu cầu kết nối mạng. Hãy tiến vào PHÒNG THÍ NGHIỆM THIẾT BỊ để khám phá cơ chế hoạt động chi tiết!",
+                    () => {
+                        sessionData.currentStation = 1;
+                        state.currentSubStep = 0;
+                        renderStation2();
+                    }
+                );
+            }
+        }
+
+        // TRẠM 2: KHÁM PHÁ (PHÒNG THÍ NGHIỆM 4 THIẾT BỊ)
+        function renderStation2() {
+            updateHeaderProgress();
+            const sub = state.currentSubStep;
+            const panel = document.getElementById("main-panel");
+
+            if (sub === 0) renderLabHubSwitch(panel);
+            else if (sub === 1) renderLabAP(panel);
+            else if (sub === 2) renderLabRouter(panel);
+            else if (sub === 3) renderLabModem(panel);
+            else if (sub === 4) renderLabSummary(panel);
+        }
+
+        function renderLabHubSwitch(panel) {
+            panel.innerHTML = `
+                <h2 class="station-title">TRẠM 2 - KHU A: THÍ NGHIỆM HUB & SWITCH</h2>
+                <p class="prompt">Nhấn nút bên dưới để quan sát luồng truyền dữ liệu từ <strong>PC A gửi tới PC C</strong> khi sử dụng Hub và Switch:</p>
+
+                <div class="sim-container">
+                    <svg class="network-sim" viewBox="0 0 600 200" id="hub-sim-svg">
+                        <rect x="240" y="70" width="120" height="60" rx="8" fill="#1e293b" stroke="#00f2fe" stroke-width="2"/>
+                        <text x="300" y="105" class="net-node-label" id="center-dev-label">HUB</text>
+                        <line x1="80" y1="40" x2="240" y2="85" class="net-line" id="line-a"/>
+                        <line x1="80" y1="160" x2="240" y2="115" class="net-line" id="line-b"/>
+                        <line x1="360" y1="85" x2="520" y2="40" class="net-line" id="line-c"/>
+                        <line x1="360" y1="115" x2="520" y2="160" class="net-line" id="line-d"/>
+                        <circle cx="80" cy="40" r="18" fill="#131b2e" stroke="#4facfe" stroke-width="2"/>
+                        <text x="80" y="45" class="net-node-label">PC A</text>
+                        <circle cx="80" cy="160" r="18" fill="#131b2e" stroke="#4facfe" stroke-width="2"/>
+                        <text x="80" y="165" class="net-node-label">PC B</text>
+                        <circle cx="520" cy="40" r="18" fill="#131b2e" stroke="#4facfe" stroke-width="2"/>
+                        <text x="520" y="45" class="net-node-label">PC C</text>
+                        <circle cx="520" cy="160" r="18" fill="#131b2e" stroke="#4facfe" stroke-width="2"/>
+                        <text x="520" y="165" class="net-node-label">PC D</text>
+                    </svg>
+                </div>
+
+                <div style="display:flex; gap:12px; justify-content:center; margin-bottom:16px;">
+                    <button class="btn-secondary" onclick="simulateHubSend()">▶ Mô phỏng chạy với HUB</button>
+                    <button class="btn-secondary" onclick="simulateSwitchSend()">▶ Mô phỏng chạy với SWITCH</button>
+                </div>
+
+                <div id="hub-question-area" style="display:none; margin-top:16px;">
+                    <p class="prompt"><strong>Câu hỏi chốt:</strong> Khi dùng Hub, dữ liệu từ cổng PC A được phát đến đâu?</p>
+                    <div class="options-grid">
+                        <div class="option-card" onclick="verifyHubAnswer(false, this)">Chỉ duy nhất cổng máy PC C nhận</div>
+                        <div class="option-card" onclick="verifyHubAnswer(true, this)">Tất cả các cổng còn lại (PC B, C, D) đều nhận</div>
+                    </div>
+                </div>
+
+                <div class="feedback-box" id="lab-fb">
+                    <div id="lab-fb-text"></div>
+                    <button class="btn-primary" id="lab-next-btn" style="display:none;" onclick="nextLabSection()">Sang Khu B ➔</button>
+                </div>
+            `;
+        }
+
+        function simulateHubSend() {
+            playBeep(440, 0.1);
+            document.getElementById("center-dev-label").textContent = "HUB";
+            document.getElementById("hub-sim-svg").querySelectorAll(".net-line").forEach(l => l.classList.remove("active"));
+            document.getElementById("line-a").classList.add("active");
+            setTimeout(() => {
+                document.getElementById("line-b").classList.add("active");
+                document.getElementById("line-c").classList.add("active");
+                document.getElementById("line-d").classList.add("active");
+                document.getElementById("hub-question-area").style.display = "block";
+            }, 500);
+        }
+
+        function simulateSwitchSend() {
+            playBeep(520, 0.1);
+            document.getElementById("center-dev-label").textContent = "SWITCH";
+            document.getElementById("hub-sim-svg").querySelectorAll(".net-line").forEach(l => l.classList.remove("active"));
+            document.getElementById("line-a").classList.add("active");
+            setTimeout(() => {
+                document.getElementById("line-c").classList.add("active");
+            }, 500);
+        }
+
+        function verifyHubAnswer(isCorrect, el) {
+            const fb = document.getElementById("lab-fb");
+            const fbText = document.getElementById("lab-fb-text");
+            const nxt = document.getElementById("lab-next-btn");
+            if (isCorrect) {
+                el.classList.add("correct");
+                fb.className = "feedback-box correct";
+                fbText.innerHTML = "<strong>CHÍNH XÁC!</strong> Hub phát tín hiệu đến tất cả các cổng còn lại. Switch chỉ chuyển tiếp tới đúng cổng máy nhận!";
+                nxt.style.display = "block";
+                if (!state.attempts["s2_hub"]) {
+                    state.attempts["s2_hub"] = true;
+                    sessionData.scoreStation2 += 7;
+                    sessionData.totalScore += 7;
+                    updateStickyBar();
+                    logAnswer("KP_HUB", 2, "Tất cả các cổng còn lại", true);
+                }
+                playSfx('correct');
+            } else {
+                el.classList.add("wrong");
+                fb.className = "feedback-box wrong";
+                fbText.textContent = "Chưa chính xác. Quan sát kỹ: khi dùng Hub, các đường nối PC B, C, D đều sáng đèn tín hiệu!";
+                logAnswer("KP_HUB", 2, "Chỉ PC C", false);
+                playSfx('wrong');
+            }
+        }
+
+        function renderLabAP(panel) {
+            panel.innerHTML = `
+                <h2 class="station-title">TRẠM 2 - KHU B: THÍ NGHIỆM WIRELESS ACCESS POINT (WAP)</h2>
+                <p class="prompt">Thiết bị di động đang hiển thị <span style="color:#ff5252">"Chưa kết nối"</span>. Hãy bấm kết nối Access Point vào mạng LAN:</p>
+
+                <div class="sim-container">
+                    <svg class="network-sim" viewBox="0 0 600 200">
+                        <rect x="50" y="80" width="100" height="50" rx="6" fill="#1e293b" stroke="#4facfe" stroke-width="2"/>
+                        <text x="100" y="110" class="net-node-label">Mạng LAN</text>
+                        <line x1="150" y1="105" x2="280" y2="105" class="net-line" id="ap-cable"/>
+                        <circle cx="310" cy="105" r="28" fill="#131b2e" stroke="#00f2fe" stroke-width="2"/>
+                        <text x="310" y="110" class="net-node-label">WAP</text>
+                        <path d="M 350 85 A 35 35 0 0 1 350 125" fill="none" stroke="#00f2fe" stroke-width="3" id="wifi-wave" style="display:none;"/>
+                        <rect x="440" y="50" width="110" height="40" rx="6" fill="#1e293b" stroke="#64748b" id="dev-laptop"/>
+                        <text x="495" y="75" class="net-node-label" id="laptop-status">💻 Laptop</text>
+                        <rect x="440" y="120" width="110" height="40" rx="6" fill="#1e293b" stroke="#64748b" id="dev-phone"/>
+                        <text x="495" y="145" class="net-node-label" id="phone-status">📱 Phone</text>
+                    </svg>
+                </div>
+
+                <div style="text-align:center; margin: 16px 0;">
+                    <button class="btn-primary" onclick="connectAP()">📡 CẮM ACCESS POINT VÀO LAN</button>
+                </div>
+
+                <div class="feedback-box" id="lab-fb">
+                    <div id="lab-fb-text"></div>
+                    <button class="btn-primary" id="lab-next-btn" style="display:none;" onclick="nextLabSection()">Sang Khu C ➔</button>
+                </div>
+            `;
+        }
+
+        function connectAP() {
+            document.getElementById("ap-cable").classList.add("active");
+            document.getElementById("wifi-wave").style.display = "block";
+            document.getElementById("dev-laptop").setAttribute("stroke", "#00e676");
+            document.getElementById("dev-phone").setAttribute("stroke", "#00e676");
+            document.getElementById("laptop-status").textContent = "💻 Đã kết nối Wi-Fi";
+            document.getElementById("phone-status").textContent = "📱 Đã kết nối Wi-Fi";
+
+            const fb = document.getElementById("lab-fb");
+            const fbText = document.getElementById("lab-fb-text");
+            const nxt = document.getElementById("lab-next-btn");
+
+            fb.className = "feedback-box correct";
+            fbText.innerHTML = "<strong>KẾT NỐI THÀNH CÔNG!</strong> Wireless Access Point (WAP/AP) đóng vai trò tạo điểm truy cập không dây, mở rộng mạng LAN cho thiết bị di động.";
+            nxt.style.display = "block";
+            
+            if (!state.attempts["s2_ap"]) {
+                state.attempts["s2_ap"] = true;
+                sessionData.scoreStation2 += 7;
+                sessionData.totalScore += 7;
+                updateStickyBar();
+                logAnswer("KP_AP", 2, "Cắm WAP phát Wi-Fi", true);
+            }
+            playSfx('correct');
+        }
+
+        function renderLabRouter(panel) {
+            panel.innerHTML = `
+                <h2 class="station-title">TRẠM 2 - KHU C: THÍ NGHIỆM ROUTER (BỘ ĐỊNH TUYẾN)</h2>
+                <p class="prompt">Router có cổng LAN (nối mạng trong) và cổng WAN (kết nối ra Internet). Nhấn nút gửi dữ liệu để kiểm tra chuyển tiếp liên mạng:</p>
+
+                <div class="sim-container">
+                    <svg class="network-sim" viewBox="0 0 650 180">
+                        <rect x="20" y="70" width="80" height="50" rx="6" fill="#131b2e" stroke="#4facfe"/>
+                        <text x="60" y="100" class="net-node-label">LAN A</text>
+                        <line x1="100" y1="95" x2="180" y2="95" class="net-line" id="r-line1"/>
+                        <text x="140" y="85" fill="#ffd600" font-size="12">Cổng LAN</text>
+                        <rect x="180" y="70" width="90" height="50" rx="6" fill="#1e293b" stroke="#00f2fe"/>
+                        <text x="225" y="100" class="net-node-label">Router A</text>
+                        <line x1="270" y1="95" x2="380" y2="95" class="net-line" id="r-line2"/>
+                        <text x="325" y="85" fill="#ffd600" font-size="12">Cổng WAN</text>
+                        <text x="325" y="125" fill="#94a3b8" font-size="13" text-anchor="middle">🌐 INTERNET</text>
+                        <rect x="380" y="70" width="90" height="50" rx="6" fill="#1e293b" stroke="#00f2fe"/>
+                        <text x="425" y="100" class="net-node-label">Router B</text>
+                        <line x1="470" y1="95" x2="550" y2="95" class="net-line" id="r-line3"/>
+                        <text x="510" y="85" fill="#ffd600" font-size="12">Cổng LAN</text>
+                        <rect x="550" y="70" width="80" height="50" rx="6" fill="#131b2e" stroke="#4facfe"/>
+                        <text x="590" y="100" class="net-node-label">LAN B</text>
+                    </svg>
+                </div>
+
+                <div style="text-align:center; margin: 16px 0;">
+                    <button class="btn-primary" onclick="simulateRouting()">🚀 GỬI GÓI TIN TỪ LAN A SANG LAN B</button>
+                </div>
+
+                <div class="feedback-box" id="lab-fb">
+                    <div id="lab-fb-text"></div>
+                    <button class="btn-primary" id="lab-next-btn" style="display:none;" onclick="nextLabSection()">Sang Khu D ➔</button>
+                </div>
+            `;
+        }
+
+        function simulateRouting() {
+            const l1 = document.getElementById("r-line1");
+            const l2 = document.getElementById("r-line2");
+            const l3 = document.getElementById("r-line3");
+            const fb = document.getElementById("lab-fb");
+            const fbText = document.getElementById("lab-fb-text");
+            const nxt = document.getElementById("lab-next-btn");
+
+            playBeep(400, 0.1);
+            l1.classList.add("active");
+            setTimeout(() => {
+                playBeep(550, 0.1);
+                l2.classList.add("active");
+                setTimeout(() => {
+                    playBeep(700, 0.15);
+                    l3.classList.add("active");
+                    fb.className = "feedback-box correct";
+                    fbText.innerHTML = "<strong>ĐỊNH TUYẾN THÀNH CÔNG!</strong> Hành trình: LAN A ➔ Cổng LAN ➔ Cổng WAN ➔ Mạng viễn thông ➔ Router B ➔ LAN B.";
+                    nxt.style.display = "block";
+                    if (!state.attempts["s2_router"]) {
+                        state.attempts["s2_router"] = true;
+                        sessionData.scoreStation2 += 7;
+                        sessionData.totalScore += 7;
+                        updateStickyBar();
+                        logAnswer("KP_ROUTER", 2, "Định tuyến LAN-WAN", true);
+                    }
+                    playSfx('correct');
+                }, 400);
+            }, 400);
+        }
+
+        function renderLabModem(panel) {
+            panel.innerHTML = `
+                <h2 class="station-title">TRẠM 2 - KHU D: THÍ NGHIỆM MODEM (CHUYỂN ĐỔI TÍN HIỆU)</h2>
+                <p class="prompt">Trong mạng LAN máy tính chỉ dùng tín hiệu số (0 và 1), còn đường truyền Internet dùng tín hiệu tương tự (quang, sóng...). Chạm để lắp MODEM:</p>
+
+                <div class="sim-container">
+                    <svg class="network-sim" viewBox="0 0 650 180">
+                        <text x="120" y="40" fill="#00f2fe" font-weight="bold">Tín hiệu tương tự (Analog)</text>
+                        <path d="M 40 85 Q 70 55 100 85 T 160 85 T 220 85" fill="none" stroke="#00f2fe" stroke-width="3"/>
+                        <text x="130" y="115" class="net-node-label">Đường truyền Internet</text>
+                        <g onclick="placeModem()" style="cursor:pointer;">
+                            <rect x="260" y="55" width="130" height="70" rx="8" fill="#1e293b" stroke="#ffd600" stroke-width="2" stroke-dasharray="4" id="modem-box"/>
+                            <text x="325" y="95" class="net-node-label" id="modem-text" fill="#ffd600">⚡ Chạm lắp MODEM</text>
+                        </g>
+                        <text x="500" y="40" fill="#00e676" font-weight="bold">Tín hiệu số (Digital 0/1)</text>
+                        <path d="M 430 95 L 450 95 L 450 65 L 480 65 L 480 95 L 510 95 L 510 65 L 540 65 L 540 95 L 570 95" fill="none" stroke="#00e676" stroke-width="3"/>
+                        <text x="500" y="115" class="net-node-label">Mạng LAN / Router</text>
+                    </svg>
+                </div>
+
+                <div class="feedback-box" id="lab-fb">
+                    <div id="lab-fb-text"></div>
+                    <button class="btn-primary" id="lab-next-btn" style="display:none;" onclick="nextLabSection()">Sang Bảng Tổng Hợp ➔</button>
+                </div>
+            `;
+        }
+
+        function placeModem() {
+            document.getElementById("modem-box").setAttribute("fill", "#059669");
+            document.getElementById("modem-box").setAttribute("stroke", "#00e676");
+            document.getElementById("modem-box").removeAttribute("stroke-dasharray");
+            document.getElementById("modem-text").textContent = "MODEM (Đã kích hoạt)";
+            document.getElementById("modem-text").setAttribute("fill", "#fff");
+
+            const fb = document.getElementById("lab-fb");
+            const fbText = document.getElementById("lab-fb-text");
+            const nxt = document.getElementById("lab-next-btn");
+
+            fb.className = "feedback-box correct";
+            fbText.innerHTML = "<strong>CHÍNH XÁC!</strong> Modem chuyển đổi tín hiệu số sang tương tự và ngược lại, giữ nguyên nội dung dữ liệu.";
+            nxt.style.display = "block";
+            
+            if (!state.attempts["s2_modem"]) {
+                state.attempts["s2_modem"] = true;
+                sessionData.scoreStation2 += 7;
+                sessionData.totalScore += 7;
+                updateStickyBar();
+                logAnswer("KP_MODEM", 2, "Chuyển đổi số - tương tự", true);
+            }
+            playSfx('correct');
+        }
+
+        function renderLabSummary(panel) {
+            panel.innerHTML = `
+                <h2 class="station-title">TRẠM 2: TỔNG KẾT VÀ GHI NHỚ THIẾT BỊ</h2>
+                <p class="prompt">Hãy ghép mỗi thiết bị với <strong>từ khóa chức năng cốt lõi</strong> của nó:</p>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin: 16px 0;">
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <div class="option-card" style="cursor:default;">1. HUB (Bộ chia)</div>
+                        <div class="option-card" style="cursor:default;">2. SWITCH (Bộ chuyển mạch)</div>
+                        <div class="option-card" style="cursor:default;">3. ACCESS POINT (WAP)</div>
+                        <div class="option-card" style="cursor:default;">4. ROUTER (Bộ định tuyến)</div>
+                        <div class="option-card" style="cursor:default;">5. MODEM</div>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <div class="drop-target" onclick="matchSummary(0, this)">Chạm ghép: [Phát rộng mọi cổng]</div>
+                        <div class="drop-target" onclick="matchSummary(1, this)">Chạm ghép: [Đúng cổng - Tránh xung đột]</div>
+                        <div class="drop-target" onclick="matchSummary(2, this)">Chạm ghép: [Phát Wi-Fi - Mở rộng LAN]</div>
+                        <div class="drop-target" onclick="matchSummary(3, this)">Chạm ghép: [Dẫn đường giữa các mạng]</div>
+                        <div class="drop-target" onclick="matchSummary(4, this)">Chạm ghép: [Chuyển đổi tín hiệu số ⇄ tương tự]</div>
+                    </div>
+                </div>
+
+                <div class="feedback-box" id="lab-fb" style="display:flex; justify-content:space-between;">
+                    <div id="lab-fb-text">Ghép đủ 5 cặp thẻ để hoàn thành Trạm 2!</div>
+                    <button class="btn-primary" id="lab-next-btn" style="display:none;" onclick="completeStation2()">Nhận Mảnh Khóa 2 ➔</button>
+                </div>
+            `;
+            state.summaryMatched = 0;
+        }
+
+        function matchSummary(idx, el) {
+            if (el.classList.contains("filled")) return;
+            el.classList.add("filled");
+            el.textContent = "✓ Đã ghép chính xác";
+            playBeep(600 + idx * 80, 0.1);
+            state.summaryMatched = (state.summaryMatched || 0) + 1;
+            
+            if (state.summaryMatched >= 5) {
+                if (!state.attempts["s2_summary"]) {
+                    state.attempts["s2_summary"] = true;
+                    sessionData.scoreStation2 += 7;
+                    sessionData.totalScore += 7;
+                    updateStickyBar();
+                    logAnswer("KP_MATCH5", 2, "Ghép đúng 5/5 thiết bị", true);
+                }
+                const fbText = document.getElementById("lab-fb-text");
+                const nxt = document.getElementById("lab-next-btn");
+                fbText.innerHTML = "<strong>XUẤT SẮC!</strong> Bạn đã nắm vững toàn bộ chức năng cốt lõi của 5 thiết bị mạng thông dụng!";
+                nxt.style.display = "block";
+                playSfx('correct');
+            }
+        }
+
+        function nextLabSection() {
+            state.currentSubStep++;
+            renderStation2();
+        }
+
+        function completeStation2() {
+            unlockKey(1);
+            showStationTransition(
+                "ĐÃ MỞ KHÓA MẢNH 2: NẮM VỮNG THIẾT BỊ",
+                "Bạn đã giải mã thành công chức năng vật lý và logic của từng thiết bị. Tiến vào TRẠM 3 để gia nhập ĐỘI CỨU HỘ MẠNG!",
+                () => {
+                    sessionData.currentStation = 2;
+                    state.currentSubStep = 0;
+                    renderStation3();
+                }
+            );
+        }
+
+        // TRẠM 3: LUYỆN TẬP (ĐỘI CỨU HỘ MẠNG)
+        function renderStation3() {
+            updateHeaderProgress();
+            const panel = document.getElementById("main-panel");
+            const step = state.currentSubStep;
+
+            if (step < GAME_DATA.station3_identify.length) {
+                const q = GAME_DATA.station3_identify[step];
+                panel.innerHTML = `
+                    <h2 class="station-title">TRẠM 3: VÒNG 1 - NHẬN DIỆN SIÊU TỐC (${step + 1}/5)</h2>
+                    <p class="prompt"><strong>Tình huống:</strong> ${q.q}</p>
+                    <div class="options-grid">
+                        ${q.options.map((opt, i) => `
+                            <div class="option-card" onclick="handleIdentifyAnswer(${i}, ${q.ans})">${opt}</div>
+                        `).join('')}
+                    </div>
+                    <div class="feedback-box" id="s3-fb">
+                        <div id="s3-fb-text"></div>
+                        <button class="btn-primary" id="s3-next-btn" style="display:none;" onclick="nextStation3Step()">Tiếp tục ➔</button>
+                    </div>
+                `;
+            } else {
+                const errIdx = step - GAME_DATA.station3_identify.length;
+                const err = GAME_DATA.station3_troubleshoot[errIdx];
+                panel.innerHTML = `
+                    <h2 class="station-title">TRẠM 3: VÒNG 2 - BÁC SĨ MẠNG: CHẨN ĐOÁN LỖI (${errIdx + 1}/4)</h2>
+                    <p class="prompt"><strong>${err.title}:</strong> ${err.desc}</p>
+                    <div class="options-grid">
+                        ${err.options.map(opt => `
+                            <div class="option-card" onclick="handleTroubleshootAnswer(${opt.correct ? 'true' : 'false'}, this, '${err.explain}', '${err.id}')">${opt.text}</div>
+                        `).join('')}
+                    </div>
+                    <div class="feedback-box" id="s3-fb">
+                        <div id="s3-fb-text"></div>
+                        <button class="btn-primary" id="s3-next-btn" style="display:none;" onclick="nextStation3Step()">Tiếp tục ➔</button>
+                    </div>
+                `;
+            }
+        }
+
+        function handleIdentifyAnswer(chosen, ans) {
+            const fb = document.getElementById("s3-fb");
+            const fbText = document.getElementById("s3-fb-text");
+            const nxt = document.getElementById("s3-next-btn");
+            const cards = document.querySelectorAll(".option-card");
+            const q = GAME_DATA.station3_identify[state.currentSubStep];
+
+            if (chosen === ans) {
+                cards[chosen].classList.add("correct");
+                fb.className = "feedback-box correct";
+                fbText.innerHTML = "<strong>CHÍNH XÁC!</strong> " + q.explain;
+                nxt.style.display = "block";
+                
+                if (!state.attempts[q.id]) {
+                    state.attempts[q.id] = true;
+                    sessionData.scoreStation3 += 4;
+                    sessionData.totalScore += 4;
+                    updateStickyBar();
+                    logAnswer(q.id, 3, q.options[chosen], true);
+                }
+                playSfx('correct');
+            } else {
+                cards[chosen].classList.add("wrong");
+                fb.className = "feedback-box wrong";
+                fbText.textContent = "Chưa chính xác. Đọc kỹ lại từ khóa trong câu hỏi nhé!";
+                logAnswer(q.id, 3, q.options[chosen], false);
+                playSfx('wrong');
+            }
+        }
+
+        function handleTroubleshootAnswer(isCorrect, el, explain, errId) {
+            const fb = document.getElementById("s3-fb");
+            const fbText = document.getElementById("s3-fb-text");
+            const nxt = document.getElementById("s3-next-btn");
+
+            if (isCorrect) {
+                el.classList.add("correct");
+                fb.className = "feedback-box correct";
+                fbText.innerHTML = "<strong>XỬ LÝ LỖI CHUẨN XÁC!</strong> " + explain;
+                nxt.style.display = "block";
+                
+                if (!state.attempts[errId]) {
+                    state.attempts[errId] = true;
+                    // Câu cuối 3 điểm để tròn 35 điểm trạm 3 (5x4 + 3x4 + 1x3 = 35)
+                    const p = (errId === "CD04") ? 3 : 4;
+                    sessionData.scoreStation3 += p;
+                    sessionData.totalScore += p;
+                    updateStickyBar();
+                    logAnswer(errId, 3, el.textContent, true);
+                }
+                playSfx('correct');
+            } else {
+                el.classList.add("wrong");
+                fb.className = "feedback-box wrong";
+                fbText.textContent = "Chưa đúng giải pháp kỹ thuật. Hãy xem xét cách kiểm tra đơn giản và an toàn nhất!";
+                logAnswer(errId, 3, el.textContent, false);
+                playSfx('wrong');
+            }
+        }
+
+        function nextStation3Step() {
+            state.currentSubStep++;
+            const totalSteps = GAME_DATA.station3_identify.length + GAME_DATA.station3_troubleshoot.length;
+            if (state.currentSubStep < totalSteps) {
+                renderStation3();
+            } else {
+                unlockKey(2);
+                showStationTransition(
+                    "ĐÃ MỞ KHÓA MẢNH 3: BẬC THẦY CHẨN ĐOÁN",
+                    "Bạn đã xuất sắc nhận diện và xử lý mọi sự cố mạng vật lý & Wi-Fi. Bước vào thử thách cuối cùng: THIẾT KẾ MẠNG PHÒNG HỌC 20 MÁY!",
+                    () => {
+                        sessionData.currentStation = 3;
+                        state.currentSubStep = 0;
+                        renderStation4();
+                    }
+                );
+            }
+        }
+
+        // TRẠM 4: VẬN DỤNG (THIẾT KẾ SƠ ĐỒ LỚP HỌC 20 MÁY TÍNH)
+        function renderStation4() {
+            updateHeaderProgress();
+            const panel = document.getElementById("main-panel");
+
+            panel.innerHTML = `
+                <h2 class="station-title">TRẠM 4: THIẾT KẾ SƠ ĐỒ MẠNG PHÒNG HỌC 20 MÁY TÍNH</h2>
+                <p class="prompt">
+                    <strong>Nhiệm vụ kỹ sư:</strong> Lớp học cần nối 20 máy tính bàn với Internet và phát thêm Wi-Fi cho Laptop/Điện thoại. 
+                    Hãy chọn thiết bị từ kho để điền vào 4 vị trí trên trục sơ đồ:
+                </p>
+
+                <div class="sim-container" style="min-height: 250px;">
+                    <svg class="network-sim" viewBox="0 0 700 230">
+                        <text x="350" y="30" class="net-node-label" fill="#00f2fe">🌐 ĐƯỜNG TRUYỀN INTERNET (ISP)</text>
+                        <line x1="350" y1="35" x2="350" y2="60" class="net-line active"/>
+
+                        <g onclick="selectDesignSlot(1)">
+                            <rect x="270" y="60" width="160" height="35" rx="6" fill="#131b2e" stroke="#00f2fe" id="slot-box-1" stroke-dasharray="3"/>
+                            <text x="350" y="82" class="net-node-label" id="slot-text-1">Vị trí 1: [? Cần thiết bị gì]</text>
+                        </g>
+                        <line x1="350" y1="95" x2="350" y2="115" class="net-line active"/>
+
+                        <g onclick="selectDesignSlot(2)">
+                            <rect x="270" y="115" width="160" height="35" rx="6" fill="#131b2e" stroke="#00f2fe" id="slot-box-2" stroke-dasharray="3"/>
+                            <text x="350" y="137" class="net-node-label" id="slot-text-2">Vị trí 2: [? Cần thiết bị gì]</text>
+                        </g>
+
+                        <line x1="430" y1="132" x2="520" y2="132" class="net-line active"/>
+                        <g onclick="selectDesignSlot(4)">
+                            <rect x="520" y="115" width="150" height="35" rx="6" fill="#131b2e" stroke="#00f2fe" id="slot-box-4" stroke-dasharray="3"/>
+                            <text x="595" y="137" class="net-node-label" id="slot-text-4">Vị trí 4: [? Phát Wi-Fi]</text>
+                        </g>
+
+                        <line x1="350" y1="150" x2="350" y2="175" class="net-line active"/>
+
+                        <g onclick="selectDesignSlot(3)">
+                            <rect x="250" y="175" width="200" height="35" rx="6" fill="#131b2e" stroke="#00f2fe" id="slot-box-3" stroke-dasharray="3"/>
+                            <text x="350" y="197" class="net-node-label" id="slot-text-3">Vị trí 3: [? Nối 20 PC]</text>
+                        </g>
+
+                        <line x1="350" y1="210" x2="350" y2="225" class="net-line active"/>
+                        <text x="350" y="225" class="net-node-label" fill="#00e676">💻 💻 💻 Hệ thống 20 máy tính học sinh</text>
+                    </svg>
+                </div>
+
+                <div class="drag-zone">
+                    <span style="font-size:14px; color:var(--text-muted); align-self:center;">Kho thiết bị:</span>
+                    <button class="draggable-item" onclick="pickItem('Modem')">🌐 Modem</button>
+                    <button class="draggable-item" onclick="pickItem('Router')">🔀 Router</button>
+                    <button class="draggable-item" onclick="pickItem('Switch 24 cổng')">🖧 Switch 24 cổng</button>
+                    <button class="draggable-item" onclick="pickItem('Access Point')">📡 Access Point</button>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div id="active-item-hint" style="color:var(--yellow-hint); font-size:15px;">Đang cầm: <span id="holding-name">Chưa chọn</span></div>
+                    <button class="btn-primary" onclick="verifyNetworkDesign()">KIỂM TRA THIẾT KẾ SƠ ĐỒ ➔</button>
+                </div>
+
+                <div class="feedback-box" id="s4-fb">
+                    <div id="s4-fb-text"></div>
+                    <button class="btn-primary" id="s4-next-btn" style="display:none;" onclick="finishGame()">XEM BẢNG TỔNG KẾT NHIỆM VỤ 🏆</button>
+                </div>
+            `;
+            state.designPlacement = { 1: null, 2: null, 3: null, 4: null };
+            state.holdingItem = null;
+        }
+
+        function pickItem(name) {
+            state.holdingItem = name;
+            document.getElementById("holding-name").textContent = name + " (Bấm vào Vị trí 1, 2, 3 hoặc 4 để đặt)";
+            playBeep(500, 0.08);
+        }
+
+        function selectDesignSlot(slotNum) {
+            if (!state.holdingItem) {
+                alert("Vui lòng chạm chọn 1 thiết bị từ kho bên dưới trước!");
+                return;
+            }
+            state.designPlacement[slotNum] = state.holdingItem;
+            document.getElementById(`slot-text-${slotNum}`).textContent = state.holdingItem;
+            const boxEl = document.getElementById(`slot-box-${slotNum}`);
+            boxEl.setAttribute("stroke", "#00e676");
+            boxEl.removeAttribute("stroke-dasharray");
+            playBeep(650, 0.1);
+        }
+
+        function verifyNetworkDesign() {
+            const p = state.designPlacement;
+            const fb = document.getElementById("s4-fb");
+            const fbText = document.getElementById("s4-fb-text");
+            const nxt = document.getElementById("s4-next-btn");
+
+            const isCorrect = (p[1] === 'Modem' && p[2] === 'Router' && p[3] === 'Switch 24 cổng' && p[4] === 'Access Point');
+
+            if (isCorrect) {
+                fb.className = "feedback-box correct";
+                fbText.innerHTML = "<strong>SƠ ĐỒ HOÀN TOÀN CHÍNH XÁC!</strong> ISP ➔ Modem ➔ Router ➔ Switch 24 cổng (nối 20 PC) + Access Point (phát Wi-Fi). Toàn bộ hệ thống Trung tâm Học tập Số đã thông mạng!";
+                nxt.style.display = "block";
+                
+                if (!state.attempts["s4_design"]) {
+                    state.attempts["s4_design"] = true;
+                    sessionData.scoreStation4 = 20;
+                    sessionData.totalScore += 20;
+                    updateStickyBar();
+                    logAnswer("VD_THIETKE", 4, "Modem-Router-Switch24-AP", true);
+                }
+                playSfx('correct');
+                unlockKey(3);
+            } else {
+                fb.className = "feedback-box wrong";
+                fbText.innerHTML = "Chưa tối ưu! <strong>Gợi ý:</strong> Tín hiệu từ nhà mạng cần qua Modem chuyển đổi, sau đó qua Router chia mạng, tiếp tục dùng Switch 24 cổng nối 20 PC và Access Point phát Wi-Fi.";
+                sessionData.hintsUsed++;
+                logAnswer("VD_THIETKE", 4, JSON.stringify(p), false);
+                playSfx('wrong');
+            }
+        }
+
+        function showStationTransition(title, desc, callback) {
+            const panel = document.getElementById("main-panel");
+            panel.innerHTML = `
+                <div style="text-align: center; margin: auto; animation: fadeIn 0.4s;">
+                    <div style="margin-bottom: 20px;">
+                        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                            <path d="m9 12 2 2 4-4"/>
+                        </svg>
+                    </div>
+                    <h2 style="color: var(--green-correct); font-size: 26px; margin-bottom: 12px;">${title}</h2>
+                    <p style="font-size: 17px; color: var(--text-muted); max-width: 600px; margin: 0 auto 28px auto; line-height: 1.6;">
+                        ${desc}
+                    </p>
+                    <button class="btn-primary" id="trans-btn">TIẾP TỤC HÀNH TRÌNH ➔</button>
+                </div>
+            `;
+            document.getElementById("trans-btn").onclick = callback;
+        }
+
+        function finishGame() {
+            executeSubmit("HOÀN THÀNH");
+        }
+
+        // ===============================================================
+        // MÀN HÌNH KẾT QUẢ NÂNG CẤP & BẢNG XẾP LOẠI
+        // ===============================================================
+        function renderResultScreen() {
+            const panel = document.getElementById("main-panel");
+            let rankTitle = "";
+            let rankColor = "";
+
+            if (sessionData.totalScore >= 90) {
+                rankTitle = "NETWORK MASTER – Kỹ sư mạng xuất sắc";
+                rankColor = "#00f2fe";
+            } else if (sessionData.totalScore >= 75) {
+                rankTitle = "NETWORK EXPERT – Chuyên gia mạng";
+                rankColor = "#00e676";
+            } else if (sessionData.totalScore >= 60) {
+                rankTitle = "NETWORK TECHNICIAN – Kỹ thuật viên mạng";
+                rankColor = "#ffd600";
+            } else {
+                rankTitle = "NETWORK TRAINEE – Cần luyện tập thêm";
+                rankColor = "#ff8a80";
+            }
+
+            panel.innerHTML = `
+                <div style="text-align: center; margin: auto; max-width: 680px; width: 100%;">
+                    <h1 class="title" style="font-size: 32px;">NETWORK MISSION – KẾT QUẢ</h1>
+                    <h2 style="font-size: 22px; color: ${rankColor}; margin-bottom: 20px;">${rankTitle}</h2>
+
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; text-align: left; margin-bottom: 20px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 15px; margin-bottom: 14px;">
+                            <div><strong>Người chơi:</strong> ${sessionData.playerName}</div>
+                            <div><strong>Lớp:</strong> ${sessionData.className}</div>
+                            <div><strong>Mã lượt:</strong> <span style="font-family: monospace; color: var(--cyan-glow);">${sessionData.sessionId}</span></div>
+                            <div><strong>Thời gian:</strong> ${sessionData.durationStr} / ${APP_CONFIG.durationMinutes}:00</div>
+                            <div><strong>Trạng thái:</strong> <span style="color:${sessionData.status === 'HẾT GIỜ' ? 'var(--red-warn)' : 'var(--green-correct)'}; font-weight:bold;">${sessionData.status}</span></div>
+                            <div><strong>Mảnh khóa mạng:</strong> ${sessionData.lastStationCompleted}/4</div>
+                        </div>
+
+                        <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; display: flex; justify-content: space-between; font-size: 14px;">
+                            <span>Trạm 1: <strong>${sessionData.scoreStation1}/10</strong></span>
+                            <span>Trạm 2: <strong>${sessionData.scoreStation2}/35</strong></span>
+                            <span>Trạm 3: <strong>${sessionData.scoreStation3}/35</strong></span>
+                            <span>Trạm 4: <strong>${sessionData.scoreStation4}/20</strong></span>
+                        </div>
+
+                        <div style="margin-top: 16px; text-align: center; font-size: 24px; color: var(--cyan-glow); font-weight: 800;">
+                            TỔNG ĐIỂM: ${sessionData.totalScore}/100
+                        </div>
+                    </div>
+
+                    <!-- THẺ TRẠNG THÁI ĐỒNG BỘ -->
+                    <div id="sync-status-card" style="background: rgba(0,0,0,0.3); border: 1px dashed rgba(255,255,255,0.2); padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;">
+                        <span style="color:var(--yellow-hint);">⏳ Đang khởi tạo đồng bộ...</span>
+                    </div>
+
+                    <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;">
+                        <button class="btn-secondary" onclick="openReviewModal()">📚 XEM LẠI KIẾN THỨC</button>
+                    </div>
+                </div>
+            `;
+            playSfx('unlock');
+        }
+
+        function openReviewModal() { document.getElementById("review-modal").style.display = "flex"; }
+        function closeReviewModal() { document.getElementById("review-modal").style.display = "none"; }
+
+        // Khởi động khi tải trang: kiểm tra session cũ hoặc vào form đăng nhập
+        window.onload = () => {
+            if (tryRestoreSession()) {
+                document.getElementById("player-sticky-bar").style.display = "flex";
+                updateStickyBar();
+                startCountdown();
+                if (sessionData.currentStation === 0) renderStation1();
+                else if (sessionData.currentStation === 1) renderStation2();
+                else if (sessionData.currentStation === 2) renderStation3();
+                else if (sessionData.currentStation === 3) renderStation4();
+            } else {
+                renderAuthScreen();
+            }
+        };
+    </script>
+</body>
+</html>
